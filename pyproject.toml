@@ -1,0 +1,25 @@
+[build-system]
+requires = [
+    "scikit-build-core",
+    "pybind11",
+    "numpy",
+    "pandas"
+]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "background_subtraction_gmm"
+version = "0.1.0"
+description = "GMM Background Subtraction with Python, NumPy and C++ backend"
+requires-python = ">=3.9"
+
+dependencies = [
+    "numpy",
+    "pandas",
+    "opencv-python",
+    "pyyaml"
+]
+
+[tool.scikit-build]
+build-dir = "build/{wheel_tag}"
+cmake.verbose = true

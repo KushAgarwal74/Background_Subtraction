@@ -1,0 +1,4 @@
+k: 3
+alpha: 0.01
+bg_threshold: 0.7
+threshold: 2.5
