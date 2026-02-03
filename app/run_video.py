@@ -2,7 +2,6 @@ import argparse
 import os
 import cv2
 import yaml
-from background_subtraction_gmm import gmm_cpp
 from app.visualize import show_frame
 from core.gmm import SingleGaussianBackground, GMMBackground, GMMBackgroundVectorized
 from core.pixel_model_cpp_backend import GMMBackgroundCpp
@@ -16,15 +15,21 @@ def load_config(path):
     with open(path, 'r') as file:
         return yaml.safe_load(file)
 
-def run_video(video_path: str, user_config: dict, mode : str):
+def run_video(video_path: str, camera_index : int, user_config: dict, mode : str):
     """
     The Logic: Processes the video using GMM model.
     """
-
-    cap = cv2.VideoCapture(video_path)
+    if camera_index is not None:
+        cap = cv2.VideoCapture(camera_index)
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        print(f"[INFO] Using camera index : {camera_index}")
+    else:
+        cap = cv2.VideoCapture(video_path)
+        print(f"[INFO] Using video file: {video_path}")
 
     if not cap.isOpened():
-        raise IOError(f"Cannot open video: {video_path}")
+        src = f"camera {camera_index}" if camera_index is not None else video_path
+        raise IOError(f"Cannot open Source: {src}")
     
     #------------------Metadata---------------------
     width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -91,10 +96,12 @@ def main():
     parser = argparse.ArgumentParser(description="GMM Background Subtraction Tool")
 
     # Path Arguments
-    parser.add_argument("--video", type=str, required=True,
+    parser.add_argument("--video", type=str, default=None,
                         help="Path to the input video file")
     parser.add_argument("--config", type=str, default="configs/gmm.yaml",
                         help="Path to the YAML configuration file (default: %(default)s)")
+    parser.add_argument("--camera", type = int, default= None,
+                        help="Camera index (e.g. 0, 1, 2 ....)")
     
     # Execution Arguments
     parser.add_argument("--mode", type = str, choices = ['vec', 'loop', 'cpp'], default = 'vec',
@@ -105,21 +112,24 @@ def main():
     args = parser.parse_args()
     # Namespace(video='bowling.mp4', config='configs/gmm.yaml', mode='vec', show=True)
 
+    if args.video is None and args.camera is None:
+        parser.error("Either -- video or --camera must be provided")
+    if args.video is not None and args.camera is not None:
+        print("[INFO] Camera Provided, Video will be ignored")
+
     # Config is the Reader
     # Load the dictionary using the path from terminal 
     user_Config = load_config(args.config)
 
     print(f"[INFO] Starting GMM in {args.mode} mode")
-    print(f"[INFO] Video: {args.video}")
+    # print(f"[INFO] Video: {args.video}")
     print(f"[INFO] Config: {user_Config}")
 
     # Pass the terminal inputs into the logic function
-    run_video(video_path=args.video, user_config=user_Config, mode = args.mode)
+    run_video(video_path=args.video, camera_index = args.camera, user_config=user_Config, mode = args.mode)
 
 if __name__ == "__main__":
     main()
-    
-
 
 # Run Video to proove maths
 

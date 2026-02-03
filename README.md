@@ -30,13 +30,13 @@ python -m app.run_video \
   --config configs/gmm.yaml
 
 # Supported mode are loop, vec, cpp
-
+```
 
 ---
 
 ### Performance Snapshot
 ```md
-## Performance Snapshot
+### Performance Snapshot
 
 At 1280×720 resolution:
 
@@ -46,7 +46,8 @@ At 1280×720 resolution:
 
 Full benchmark results are available in `BENCHMARK.md`.
 
-## Validation
+
+# Validation
 
 All backends were validated using automated parity tests ensuring:
 
@@ -54,3 +55,12 @@ All backends were validated using automated parity tests ensuring:
 - no temporal drift
 - consistent behavior across resolutions
 
+
+## Why This Matters
+
+This project demonstrates:
+- algorithmic understanding
+- numerical correctness
+- performance optimization
+- clean Python↔C++ integration
+- real-world engineering practices
