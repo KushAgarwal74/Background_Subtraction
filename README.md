@@ -26,9 +26,13 @@ Run background subtraction:
 ```bash
 python -m app.run_video \
   --video data/videos/bowling.mp4 \
+  --camera camera_index \
+  --scale 0.5  \
+  --config configs/gmm.yaml \
   --mode cpp \
-  --config configs/gmm.yaml
 
+# scale between (0, 1]
+# run app/webcam.py to find the camera index once
 # Supported mode are loop, vec, cpp
 ```
 
@@ -40,9 +44,14 @@ python -m app.run_video \
 
 At 1280×720 resolution:
 
-- Loop: ~0.22 FPS
-- Vectorized: ~14.4 FPS
-- C++: ~38.3 FPS
+- Loop: ~0.29 FPS
+- Loop Scaled@4x ~1.14 FPS
+
+- Vectorized: ~13.63 FPS
+- Vectorized Scaled@4x ~50.12 FPS
+
+- C++: ~37.65 FPS
+- C++ Scaled@4x ~137.12 FPS
 
 Full benchmark results are available in `BENCHMARK.md`.
 

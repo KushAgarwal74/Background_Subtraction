@@ -32,12 +32,14 @@ class GMMBenchmarker:
         # A. Preprocessing
         frame_resized = cv2.resize(frame, self.res)
         gray = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2GRAY).astype("float32")/255
+        scale = 0.5
+        downscale = cv2.resize(gray, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA) if self.res[0] > 600 else gray
         t1 = time.perf_counter()
 
         if self.is_vectorized:
             # --------- VECTOR LOGIC -----------
             # B. Match (The Logic we vectorized)
-            matches, any_match, best_k, dist = self.model.pixel_logic.get_best_match(gray)
+            matches, any_match, best_k, dist = self.model.pixel_logic.get_best_match(downscale)
             t2 = time.perf_counter()
 
             # C. Classify
@@ -46,7 +48,7 @@ class GMMBenchmarker:
 
             # D. Update (The innovation + learning)
             update_mask = np.ones_like(any_match, dtype=bool)
-            self.model.pixel_logic.update(gray, matches, any_match, best_k, update_mask)
+            self.model.pixel_logic.update(downscale, matches, any_match, best_k, update_mask)
             t4 = time.perf_counter()
 
             # Record timings
@@ -58,7 +60,7 @@ class GMMBenchmarker:
         elif self.isCpp:
             # --------- CPP LOGIC ---------
             # Call the standard apply() for total time
-            fg_mask = self.model.apply(gray)
+            fg_mask = self.model.apply(downscale)
             t2 = time.perf_counter()
             
             # Record Loop Stats
@@ -67,7 +69,7 @@ class GMMBenchmarker:
         else:
             # --------- LOOP LOGIC ---------
             # Call the standard apply() which contains the internals loops
-            fg_mask = self.model.apply(gray)
+            fg_mask = self.model.apply(downscale)
             t2 = time.perf_counter()
             
             # Record Loop Stats

@@ -15,7 +15,7 @@ def load_config(path):
     with open(path, 'r') as file:
         return yaml.safe_load(file)
 
-def run_video(video_path: str, camera_index : int, user_config: dict, mode : str):
+def run_video(video_path: str, camera_index : int, scale : float, user_config: dict, mode : str):
     """
     The Logic: Processes the video using GMM model.
     """
@@ -64,18 +64,32 @@ def run_video(video_path: str, camera_index : int, user_config: dict, mode : str
         # Pixel range check
         # print(f"Pixel range: min={gray_norm.min():.3f}, max = {gray_norm.max():.3f}", end="\r")
 
-        # --------------Background Masking-----------------
+        # Downscaling for faster FPS
+        downscale_frame = cv2.resize(gray_norm, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+        # INTER_AREA
+          # Best for downsampling
+          # Reduces aliasing
+
+        # --------------Background Masking - Initialize model (ONCE, at small resolution)-----------------
         if bg_model is None:
             if mode == "cpp":
-                bg_model = GMMBackgroundCpp(gray_norm, **user_config)
+                bg_model = GMMBackgroundCpp(downscale_frame, **user_config)
             elif mode == 'vec':
-                bg_model = GMMBackgroundVectorized(gray_norm, **user_config)
+                bg_model = GMMBackgroundVectorized(downscale_frame, **user_config)
             else:
-                bg_model = GMMBackground(gray_norm, **user_config)
+                bg_model = GMMBackground(downscale_frame, **user_config)
             continue
 
-        # Process and Display
-        fg_mask = bg_model.apply(gray_norm)
+        # Process and Display : Run Background Subtraction
+        # fg_mask = bg_model.apply(gray_norm)
+        small_mask = bg_model.apply(downscale_frame)
+
+        # Upscale mask back
+        fg_mask = cv2.resize(small_mask, (gray_norm.shape[1], gray_norm.shape[0]), interpolation=cv2.INTER_NEAREST)
+                # Inter_NEAREST)
+                  # Preserves binary values
+                  # No ghost pixels
+                  # No gray edges
 
         #-------------Display and User Input--------------
         show_frame(gray_norm)       # dispaly the original grayscale frame
@@ -102,6 +116,8 @@ def main():
                         help="Path to the YAML configuration file (default: %(default)s)")
     parser.add_argument("--camera", type = int, default= None,
                         help="Camera index (e.g. 0, 1, 2 ....)")
+    parser.add_argument("--scale", type=float, default=1.0,
+                        help="scale model for performance (e.g. 0.5, 0.3....)")
     
     # Execution Arguments
     parser.add_argument("--mode", type = str, choices = ['vec', 'loop', 'cpp'], default = 'vec',
@@ -111,6 +127,9 @@ def main():
     
     args = parser.parse_args()
     # Namespace(video='bowling.mp4', config='configs/gmm.yaml', mode='vec', show=True)
+
+    if not (0 < args.scale <= 1.0):
+        parser.error("--scale must be in (0, 1]")
 
     if args.video is None and args.camera is None:
         parser.error("Either -- video or --camera must be provided")
@@ -126,7 +145,7 @@ def main():
     print(f"[INFO] Config: {user_Config}")
 
     # Pass the terminal inputs into the logic function
-    run_video(video_path=args.video, camera_index = args.camera, user_config=user_Config, mode = args.mode)
+    run_video(video_path=args.video, camera_index = args.camera, scale = args.scale, user_config=user_Config, mode = args.mode)
 
 if __name__ == "__main__":
     main()

@@ -20,6 +20,7 @@ resolutions = [
 
 def run_scaling_benchmark(video_path):
     results = []
+    scale = 0.5
 
     for res in resolutions:
         print(f"\n------- Testing Resolution: {res[0]}x{res[1]} -------")
@@ -40,12 +41,15 @@ def run_scaling_benchmark(video_path):
         
             # Initialize with the resized first frame
             init_gray = cv2.cvtColor(cv2.resize(first_frame,res), cv2.COLOR_BGR2GRAY).astype("float32")/255
-            model = model_class(init_gray, k =3)
+        
+            downscale = cv2.resize(init_gray, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA) if res[0] > 600 else init_gray
+            model = model_class(downscale, k =3)
 
             bench = GMMBenchmarker(model, resolution=res)
 
             # Run for a fixed number of frames (loops take long so we limit frames)
-            num_test_frame = 5 if name == "Loop" and res[0]>600 else 30
+            # num_test_frame = 5 if name == "Loop" and res[0]>600 else 30
+            num_test_frame = 50
 
             for _ in range(num_test_frame):
                 ret, frame = cap.read()
