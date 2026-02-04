@@ -16,11 +16,7 @@ Measurements:
 - Preprocessing included (resize + grayscale)
 
 Frame Performance Scaling for resolution >= 640x480:
-- grayscale
-- normalize
-- downscale
-- GMM
-- upscale mask
+- grayscale -> normalize -> downscale -> GMM -> upscale mask
 
 
 ## Resolution Scaling Results
